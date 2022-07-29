@@ -1,0 +1,17 @@
+{
+  "name": "wobbly-bot",
+  "version": "1.0.0",
+  "description": "A bot for connecting conversations together",
+  "main": "index.js",
+  "author": "John Evans",
+  "license": "GPL",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "dotenv": "^16.0.1",
+    "matrix-js-sdk": "^18.0.0",
+    "olm": "https://packages.matrix.org/npm/olm/olm-3.2.1.tgz",
+    "request": "^2.88.2"
+  }
+}
