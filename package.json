@@ -9,8 +9,9 @@
     "start": "node index.js"
   },
   "dependencies": {
+    "axios": "^1.1.2",
     "dotenv": "^16.0.1",
-    "matrix-js-sdk": "^18.0.0",
+    "matrix-js-sdk": "^20.0.0",
     "olm": "https://packages.matrix.org/npm/olm/olm-3.2.1.tgz",
     "request": "^2.88.2"
   }
