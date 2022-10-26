@@ -8,11 +8,34 @@ const {
   apples_room_id,
   bananas_room_id,
   interactions_room_id,
+  new_interactions_room_id,
+  discord_room_id,
+  xylophone_username,
+  xylophone_password,
+  zebra_username,
+  zebra_password,
+  codeop_username,
+  codeop_password,
+  commonknowledge_username,
+  commonknowledge_password,
+  codeop_username2,
+  codeop_password2,
+  commonknowledge_username2,
+  commonknowledge_password2,
+  xylophone_room_id,
+  zebra_room_id,
+  codeop_room_id,
+  commonknowledge_room_id,
 } = process.env;
 
 global.Olm = require("olm");
 
 const sdk = require("matrix-js-sdk");
+const matrixcs = require("matrix-js-sdk/lib/matrix");
+const request = require("request");
+matrixcs.request(request);
+
+const axios = require("axios");
 
 const localStorage = global.localStorage;
 const {
@@ -21,18 +44,45 @@ const {
 
 async function startApp() {
   //create client
-  const client = await sdk.createClient(matrix_server);
+  const client = sdk.createClient(matrix_server);
+  const zebraClient = sdk.createClient(matrix_server);
+  const xylophoneClient = sdk.createClient(matrix_server);
+  const codeOpClient = sdk.createClient(matrix_server);
+  const commonKnowledgeClient = sdk.createClient(matrix_server);
 
   console.log("client created");
 
   try {
     await client.loginWithPassword(bot_username, bot_password);
+
+    await xylophoneClient.loginWithPassword(
+      xylophone_username,
+      xylophone_password
+    );
+    await zebraClient.loginWithPassword(zebra_username, zebra_password);
+
+    await codeOpClient.loginWithPassword(codeop_username2, codeop_password2);
+    await commonKnowledgeClient.loginWithPassword(
+      commonknowledge_username2,
+      commonknowledge_password2
+    );
   } catch (e) {
     console.log(e);
   }
 
   console.log("starting client");
   await client.startClient({ initialSyncLimit: 10 });
+
+  await xylophoneClient.startClient({ initialSyncLimit: 10 });
+  await zebraClient.startClient({ initialSyncLimit: 10 });
+
+  try {
+    await codeOpClient.startClient({ initialSyncLimit: 10 });
+  } catch (err) {
+    console.log(err);
+  }
+
+  await commonKnowledgeClient.startClient({ initialSyncLimit: 10 });
 
   console.log("logging in");
 
@@ -42,19 +92,17 @@ async function startApp() {
 
   const whatsappRoomId = whatsapp_room_id;
 
-  //client.sendTextMessage(whatsappRoomId, "open 120363041992237057");
+  /* Create the chat with the discord bot, get the room id for this later on
+  await client.createRoom({
+    invite: ["@_discord_bot:wobbly.app"],
+  });
+  */
 
   const rooms2 = client.getRooms();
 
   console.log("rooms", rooms2);
 
   //add event handler for messages, this is the part that does the whatsapp bridging
-
-  /*
-client.on("event",(event)=>{
-    console.log(event)
-});
-*/
 
   rooms2.forEach((room) => {
     console.log(room.room_id);
@@ -64,9 +112,47 @@ client.on("event",(event)=>{
     Apples: apples_room_id,
     Bananas: bananas_room_id,
     Interactions: interactions_room_id,
+    NewInteractions: new_interactions_room_id,
   };
 
   console.log(activeRooms);
+
+  const xylophoneZebraRooms = {
+    xylophone: xylophone_room_id,
+    zebra: zebra_room_id,
+  };
+
+  const coopRooms = {
+    codeOperative: codeop_room_id,
+    commonKnowledge: commonknowledge_room_id,
+  };
+
+  /*
+  await codeOpClient.joinRoom(coopRooms.codeOperative);
+  await commonKnowledgeClient.joinRoom(coopRooms.codeOperative);
+  await codeOpClient.joinRoom(coopRooms.commonKnowledge);
+  await commonKnowledgeClient.joinRoom(coopRooms.commonKnowledge);
+  */
+
+  /*
+  await xylophoneClient.joinRoom(xylophoneZebraRooms.xylophone);
+  await zebraClient.joinRoom(xylophoneZebraRooms.xylophone);
+  await xylophoneClient.joinRoom(xylophoneZebraRooms.zebra);
+  await zebraClient.joinRoom(xylophoneZebraRooms.zebra);
+  */
+
+  //client.setDisplayName("Space Tube");
+
+  //xylophoneClient.setDisplayName("Xylophone Club");
+
+  /*
+  await xylophoneClient.sendTextMessage(
+    xylophoneZebraRooms.xylophone,
+    "changing my avatar"
+  );
+  */
+
+  //client.sendTextMessage(whatsappRoomId, "login");
 
   const checkRooms = () => {
     const rooms = client.getRooms();
@@ -82,6 +168,21 @@ client.on("event",(event)=>{
           client.joinRoom(room.summary.roomId);
         }
       }
+
+      if (
+        room.summary.roomId == exploreRooms.roomA ||
+        room.summary.roomId == exploreRooms.roomB
+      ) {
+        //console.log(room);
+      }
+
+      /*
+      if (room.summary.roomId === exploreRooms.SpaceTubeToWobbly) {
+        const events = room.currentState.events;
+        const avatarEvent = events.get("m.room.avatar").get("");
+        console.log(avatarEvent.event);
+      }
+      */
     });
   };
 
@@ -94,7 +195,9 @@ client.on("event",(event)=>{
   const scriptStart = Date.now();
 
   client.on("Room.timeline", function (event, room, toStartOfTimeline) {
-    console.log(event.getType());
+    console.log("an event happened", event.getType(), event.event.content.body);
+
+    //console.log(event.getType());
     const roomId = event.event.room_id;
 
     const eventTime = event.event.origin_server_ts;
@@ -170,6 +273,194 @@ client.on("event",(event)=>{
       }
     }
 
+    if (Object.values(exploreRooms).includes(roomId)) {
+      const message = event.event.content.body;
+      console.log(message);
+
+      if (roomId === exploreRooms.SpaceTubeToWobbly) {
+        console.log("space tube sent a message");
+
+        if (event.event.sender != "@wobbly-bot:wobbly.app")
+          client.sendTextMessage(
+            exploreRooms.WobblyToSpaceTube,
+            "Space-Tube: " + message
+          );
+      }
+      if (roomId === exploreRooms.WobblyToSpaceTube) {
+        console.log("wobbly sent a message");
+
+        if (event.event.sender != "@wobbly-bot:wobbly.app")
+          client.sendTextMessage(
+            exploreRooms.SpaceTubeToWobbly,
+            "Wobbly: " + message
+          );
+      }
+    }
+
+    if (Object.values(xylophoneZebraRooms).includes(roomId)) {
+      const message = event.event.content.body;
+
+      console.log(message);
+
+      console.log(roomId, xylophoneZebraRooms.xylophone);
+
+      if (roomId === xylophoneZebraRooms.xylophone) {
+        console.log("message in xylophone");
+        if (
+          event.event.sender != "@xylophone2:wobbly.app" &&
+          event.event.sender != "@zebra2:wobbly.app"
+        ) {
+          if (message.slice(0, 1) !== "!") {
+            client.redactEvent(roomId, event.event.event_id);
+
+            xylophoneClient.sendTextMessage(
+              xylophoneZebraRooms.xylophone,
+              message
+            );
+            xylophoneClient.sendTextMessage(xylophoneZebraRooms.zebra, message);
+          }
+
+          const commands = {
+            "set-name": {
+              description:
+                "Change the name displayed that your group sends messages from",
+              example: "!set-name New Name",
+              action: (message, client) => {
+                const namesArray = message.split(" ");
+                namesArray.shift();
+                const newName = namesArray.join(" ");
+                console.log(newName);
+                client.setDisplayName(newName);
+              },
+            },
+          };
+
+          const command = message.split(" ")[0];
+
+          if (command == "!set-name") {
+            commands["set-name"].action(message, xylophoneClient);
+          }
+        }
+      }
+      if (roomId === xylophoneZebraRooms.zebra) {
+        if (
+          event.event.sender != "@xylophone2:wobbly.app" &&
+          event.event.sender != "@zebra2:wobbly.app"
+        ) {
+          if (message.slice(0, 1) !== "!") {
+            client.redactEvent(roomId, event.event.event_id);
+
+            zebraClient.sendTextMessage(xylophoneZebraRooms.xylophone, message);
+            zebraClient.sendTextMessage(xylophoneZebraRooms.zebra, message);
+          }
+
+          const commands = {
+            "set-name": {
+              description:
+                "Change the name displayed that your group sends messages from",
+              example: "!set-name New Name",
+              action: (message, client) => {
+                const namesArray = message.split(" ");
+                namesArray.shift();
+                const newName = namesArray.join(" ");
+                console.log(newName);
+                client.setDisplayName(newName);
+              },
+            },
+          };
+
+          const command = message.split(" ")[0];
+
+          if (command == "!set-name") {
+            commands["set-name"].action(message, zebraClient);
+          }
+        }
+      }
+    }
+
+    if (Object.values(coopRooms).includes(roomId)) {
+      const message = event.event.content.body;
+
+      console.log(message);
+
+      if (roomId === coopRooms.codeOperative) {
+        console.log("message in code-op");
+        if (
+          event.event.sender != "@code_operative:wobbly.app" &&
+          event.event.sender != "@common_knowledge:wobbly.app"
+        ) {
+          if (message.slice(0, 1) !== "!") {
+            client.redactEvent(roomId, event.event.event_id);
+
+            codeOpClient.sendTextMessage(coopRooms.codeOperative, message);
+            codeOpClient.sendTextMessage(coopRooms.commonKnowledge, message);
+          }
+
+          const commands = {
+            "set-name": {
+              description:
+                "Change the name displayed that your group sends messages from",
+              example: "!set-name New Name",
+              action: (message, client) => {
+                const namesArray = message.split(" ");
+                namesArray.shift();
+                const newName = namesArray.join(" ");
+                console.log(newName);
+                client.setDisplayName(newName);
+              },
+            },
+          };
+
+          const command = message.split(" ")[0];
+
+          if (command == "!set-name") {
+            commands["set-name"].action(message, codeOpClient);
+          }
+        }
+      }
+      if (roomId === coopRooms.commonKnowledge) {
+        console.log("message in common-knowledge");
+        if (
+          event.event.sender != "@code_operative:wobbly.app" &&
+          event.event.sender != "@common_knowledge:wobbly.app"
+        ) {
+          if (message.slice(0, 1) !== "!") {
+            client.redactEvent(roomId, event.event.event_id);
+
+            commonKnowledgeClient.sendTextMessage(
+              coopRooms.codeOperative,
+              message
+            );
+            commonKnowledgeClient.sendTextMessage(
+              coopRooms.commonKnowledge,
+              message
+            );
+          }
+
+          const commands = {
+            "set-name": {
+              description:
+                "Change the name displayed that your group sends messages from",
+              example: "!set-name New Name",
+              action: (message, client) => {
+                const namesArray = message.split(" ");
+                namesArray.shift();
+                const newName = namesArray.join(" ");
+                console.log(newName);
+                client.setDisplayName(newName);
+              },
+            },
+          };
+
+          const command = message.split(" ")[0];
+
+          if (command == "!set-name") {
+            commands["set-name"].action(message, commonKnowledgeClient);
+          }
+        }
+      }
+    }
+
     //need to find id of the newly created room that bridges the groups
 
     //console.log(event.event.content.body);
@@ -182,11 +473,6 @@ client.on("event",(event)=>{
 
       console.log(url);
     }
-
-    /*
-    if (event.event.sender != "@wobbly-bot:wobbly.app")
-      client.sendTextMessage(event.event.room_id, "hello to you too");
-      */
   });
 }
 
