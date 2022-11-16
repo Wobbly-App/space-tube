@@ -83,8 +83,8 @@ async function startApp() {
 
       if (roomId === xylophoneZebraRooms.xylophone) {
         if (
-          event.event.sender != "@xylophone2:wobbly.app" &&
-          event.event.sender != "@zebra2:wobbly.app"
+          event.event.sender != xylophone_username &&
+          event.event.sender != zebra_username
         ) {
           if (message.slice(0, 1) !== "!") {
             client.redactEvent(roomId, event.event.event_id);
@@ -105,8 +105,8 @@ async function startApp() {
       }
       if (roomId === xylophoneZebraRooms.zebra) {
         if (
-          event.event.sender != "@xylophone2:wobbly.app" &&
-          event.event.sender != "@zebra2:wobbly.app"
+          event.event.sender != xylophone_username &&
+          event.event.sender != zebra_username
         ) {
           if (message.slice(0, 1) !== "!") {
             client.redactEvent(roomId, event.event.event_id);
