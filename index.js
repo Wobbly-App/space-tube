@@ -50,13 +50,24 @@ async function startApp() {
     zebra: zebra_room_id,
   };
 
+  const commands = {
+    "set-name": {
+      description:
+        "Change the name displayed that your group sends messages from",
+      example: "!set-name New Name",
+      action: (message, client) => {
+        const namesArray = message.split(" ");
+        namesArray.shift();
+        const newName = namesArray.join(" ");
+        client.setDisplayName(newName);
+      },
+    },
+  };
+
   const scriptStart = Date.now();
 
   client.on("Room.timeline", function (event, room, toStartOfTimeline) {
-    console.log("an event happened", event.getType(), event.event.content.body);
-
     const roomId = event.event.room_id;
-
     const eventTime = event.event.origin_server_ts;
 
     if (scriptStart > eventTime) {
@@ -70,12 +81,7 @@ async function startApp() {
     if (Object.values(xylophoneZebraRooms).includes(roomId)) {
       const message = event.event.content.body;
 
-      console.log(message);
-
-      console.log(roomId, xylophoneZebraRooms.xylophone);
-
       if (roomId === xylophoneZebraRooms.xylophone) {
-        console.log("message in xylophone");
         if (
           event.event.sender != "@xylophone2:wobbly.app" &&
           event.event.sender != "@zebra2:wobbly.app"
@@ -89,21 +95,6 @@ async function startApp() {
             );
             xylophoneClient.sendTextMessage(xylophoneZebraRooms.zebra, message);
           }
-
-          const commands = {
-            "set-name": {
-              description:
-                "Change the name displayed that your group sends messages from",
-              example: "!set-name New Name",
-              action: (message, client) => {
-                const namesArray = message.split(" ");
-                namesArray.shift();
-                const newName = namesArray.join(" ");
-                console.log(newName);
-                client.setDisplayName(newName);
-              },
-            },
-          };
 
           const command = message.split(" ")[0];
 
@@ -123,21 +114,6 @@ async function startApp() {
             zebraClient.sendTextMessage(xylophoneZebraRooms.xylophone, message);
             zebraClient.sendTextMessage(xylophoneZebraRooms.zebra, message);
           }
-
-          const commands = {
-            "set-name": {
-              description:
-                "Change the name displayed that your group sends messages from",
-              example: "!set-name New Name",
-              action: (message, client) => {
-                const namesArray = message.split(" ");
-                namesArray.shift();
-                const newName = namesArray.join(" ");
-                console.log(newName);
-                client.setDisplayName(newName);
-              },
-            },
-          };
 
           const command = message.split(" ")[0];
 
