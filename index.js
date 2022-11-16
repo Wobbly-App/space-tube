@@ -2,6 +2,7 @@ require("dotenv").config();
 
 const {
   matrix_server,
+  matrix_server_id,
   bot_username,
   bot_password,
   xylophone_username,
@@ -71,6 +72,12 @@ async function startApp() {
     const eventTime = event.event.origin_server_ts;
     const sender = event.event.sender;
 
+    const id = {
+      bot: `@${bot_username}:${matrix_server_id}`,
+      xylophone: `@${xylophone_username}:${matrix_server_id}`,
+      zebra: `@${zebra_username}:${matrix_server_id}`,
+    };
+
     if (scriptStart > eventTime) {
       return; //don't run commands for old messages
     }
@@ -79,7 +86,7 @@ async function startApp() {
       return; // only use messages
     }
 
-    if (sender == bot_username) {
+    if (sender == id.bot) {
       return; //don't run commands sent by space-tube-bot
     }
 
@@ -87,7 +94,7 @@ async function startApp() {
       const message = event.event.content.body;
 
       if (roomId === xylophoneZebraRooms.xylophone) {
-        if (sender != xylophone_username && sender != zebra_username) {
+        if (sender != id.xylophone && sender != id.zebra) {
           if (message.slice(0, 1) !== "!") {
             client.redactEvent(roomId, event.event.event_id);
 
@@ -106,7 +113,7 @@ async function startApp() {
         }
       }
       if (roomId === xylophoneZebraRooms.zebra) {
-        if (sender != xylophone_username && sender != zebra_username) {
+        if (sender != id.xylophone && sender != id.zebra) {
           if (message.slice(0, 1) !== "!") {
             client.redactEvent(roomId, event.event.event_id);
 
