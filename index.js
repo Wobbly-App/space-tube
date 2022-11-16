@@ -69,6 +69,7 @@ async function startApp() {
   client.on("Room.timeline", function (event, room, toStartOfTimeline) {
     const roomId = event.event.room_id;
     const eventTime = event.event.origin_server_ts;
+    const sender = event.event.sender;
 
     if (scriptStart > eventTime) {
       return; //don't run commands for old messages
@@ -78,14 +79,15 @@ async function startApp() {
       return; // only use messages
     }
 
+    if (sender == bot_username) {
+      return; //don't run commands sent by space-tube-bot
+    }
+
     if (Object.values(xylophoneZebraRooms).includes(roomId)) {
       const message = event.event.content.body;
 
       if (roomId === xylophoneZebraRooms.xylophone) {
-        if (
-          event.event.sender != xylophone_username &&
-          event.event.sender != zebra_username
-        ) {
+        if (sender != xylophone_username && sender != zebra_username) {
           if (message.slice(0, 1) !== "!") {
             client.redactEvent(roomId, event.event.event_id);
 
@@ -104,10 +106,7 @@ async function startApp() {
         }
       }
       if (roomId === xylophoneZebraRooms.zebra) {
-        if (
-          event.event.sender != xylophone_username &&
-          event.event.sender != zebra_username
-        ) {
+        if (sender != xylophone_username && sender != zebra_username) {
           if (message.slice(0, 1) !== "!") {
             client.redactEvent(roomId, event.event.event_id);
 
