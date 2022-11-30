@@ -20,6 +20,8 @@ const matrixcs = require("matrix-js-sdk/lib/matrix");
 const request = require("request");
 matrixcs.request(request);
 
+const axios = require("axios");
+
 async function startApp() {
   //create client
   const client = sdk.createClient(matrix_server);
@@ -61,6 +63,31 @@ async function startApp() {
         namesArray.shift();
         const newName = namesArray.join(" ");
         client.setDisplayName(newName);
+      },
+    },
+    "set-picture": {
+      description:
+        "Change the picture that your represents your group using image url.",
+      example:
+        "!set-picture https://en.wikipedia.org/wiki/Columbidae#/media/File:Treron_vernans_male_-_Kent_Ridge_Park.jpg",
+      action: async (message, client) => {
+        const imageUrl = message
+          .split(" ")[1]
+          .replace("<", "")
+          .replace(">", "");
+        console.log(imageUrl);
+        const imageResponse = await axios.get(imageUrl, {
+          responseType: "arraybuffer",
+        });
+        const imageType = imageResponse.headers["content-type"];
+        const uploadResponse = await client.uploadContent(imageResponse.data, {
+          rawResponse: false,
+          type: imageType,
+          onlyContentUri: false,
+        });
+        console.log(uploadResponse);
+        const matrixUrl = uploadResponse.content_uri;
+        client.setAvatarUrl(matrixUrl);
       },
     },
   };
@@ -110,6 +137,9 @@ async function startApp() {
           if (command == "!set-name") {
             commands["set-name"].action(message, xylophoneClient);
           }
+          if (command == "!set-picture") {
+            commands["set-picture"].action(message, xylophoneClient);
+          }
         }
       }
       if (roomId === xylophoneZebraRooms.zebra) {
@@ -125,6 +155,9 @@ async function startApp() {
 
           if (command == "!set-name") {
             commands["set-name"].action(message, zebraClient);
+          }
+          if (command == "!set-picture") {
+            commands["set-picture"].action(message, zebraClient);
           }
         }
       }
